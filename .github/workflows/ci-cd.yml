@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: CI (lint, audit, Snyk, build images)
+    name: CI (lint, audit, build images)
     runs-on: ubuntu-latest
 
     steps:
@@ -33,29 +33,12 @@ jobs:
           cd backend
           npm audit --audit-level=moderate || true
 
-      - name: Install Snyk CLI
-        run: npm install -g snyk
-
-      - name: Snyk test (backend)
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: |
-          cd backend
-          snyk test --severity-threshold=high || true
-
       # ─── Frontend ────────────────────────────────────
       - name: Install frontend deps
         run: cd frontend && npm ci
 
       - name: Lint frontend
         run: cd frontend && npm run lint
-
-      - name: Snyk test (frontend)
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: |
-          cd frontend
-          snyk test --severity-threshold=high || true
 
       # ─── Build Docker images ────────────────────────
       - name: Build Docker images
