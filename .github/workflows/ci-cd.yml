@@ -1,0 +1,85 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [ dev ]
+  push:
+    branches: [ main ]
+
+jobs:
+  # Job de CI pour les PR vers dev
+  ci:
+    name: CI (lint, audit, build images)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Backend
+      - name: Install backend deps
+        run: cd backend && npm ci
+
+      - name: Lint backend
+        run: cd backend && npm run lint
+
+      - name: Audit backend
+        run: cd backend && npm audit --audit-level=moderate
+
+      # Frontend
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+
+      - name: Lint frontend
+        run: cd frontend && npm run lint
+
+      # Build Docker images
+      - name: Build Docker images
+        run: |
+          docker build -t ci-backend:pr-backend ./backend
+          docker build -t ci-frontend:pr-frontend ./frontend --build-arg REACT_APP_API_URL=http://backend:3001
+
+  # Job de CD pour les merges/pushes sur main
+  cd:
+    name: CD (build & push prod images)
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Backend prod build
+      - name: Build prod backend image
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USER }}/ci-backend:latest \
+            ./backend
+
+      # Frontend prod build
+      - name: Build prod frontend image
+        run: |
+          docker build \
+            --build-arg REACT_APP_API_URL=https://api.prod \
+            -t ${{ secrets.DOCKERHUB_USER }}/ci-frontend:latest \
+            ./frontend
+
+      - name: Login to DockerHub
+        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login --username ${{ secrets.DOCKERHUB_USER }} --password-stdin
+
+      - name: Push backend image
+        run: docker push ${{ secrets.DOCKERHUB_USER }}/ci-backend:latest
+
+      - name: Push frontend image
+        run: docker push ${{ secrets.DOCKERHUB_USER }}/ci-frontend:latest
