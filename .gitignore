@@ -1,0 +1,30 @@
+# ─── Dépendances ───────────────────────────────────────
+# Node modules pour backend et frontend
+backend/node_modules/
+frontend/node_modules/
+
+# Plug’n’Play (Yarn 2+)
+.pnp/
+.pnp.js
+
+# ─── Build & Coverage ───────────────────────────────────
+# React production build
+frontend/build/
+
+# Résultats de tests
+coverage/
+frontend/coverage/
+
+# ─── Environnements ─────────────────────────────────────
+.env
+.env.*.local
+
+# ─── Logs ───────────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# ─── Système / IDE ──────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
