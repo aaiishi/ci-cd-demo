@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: CI (lint, audit, build images)
+    name: CI (lint, audit, Snyk, build images)
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 18
 
-      # Backend
+      # ─── Backend ────────────────────────────────────
       - name: Install backend deps
         run: cd backend && npm ci
 
@@ -33,14 +33,31 @@ jobs:
           cd backend
           npm audit --audit-level=moderate || true
 
-      # Frontend
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      - name: Snyk test (backend)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          cd backend
+          snyk test --severity-threshold=high || true
+
+      # ─── Frontend ────────────────────────────────────
       - name: Install frontend deps
         run: cd frontend && npm ci
 
       - name: Lint frontend
         run: cd frontend && npm run lint
 
-      # Build Docker images
+      - name: Snyk test (frontend)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          cd frontend
+          snyk test --severity-threshold=high || true
+
+      # ─── Build Docker images ────────────────────────
       - name: Build Docker images
         run: |
           docker build -t ci-backend:pr-backend ./backend
@@ -64,14 +81,14 @@ jobs:
         with:
           node-version: 18
 
-      # Backend prod
+      # ─── Build prod backend image ───────────────────
       - name: Build prod backend image
         run: |
           docker build \
             -t ${{ secrets.DOCKERHUB_USER }}/ci-backend:latest \
             ./backend
 
-      # Frontend prod
+      # ─── Build prod frontend image ──────────────────
       - name: Build prod frontend image
         run: |
           docker build \
