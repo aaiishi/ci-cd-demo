@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 18
 
-      # Backend
+      # ─── Backend ────────────────────────────────────
       - name: Install backend deps
         run: cd backend && npm ci
 
@@ -33,14 +33,14 @@ jobs:
           cd backend
           npm audit --audit-level=moderate || true
 
-      # Frontend
+      # ─── Frontend ────────────────────────────────────
       - name: Install frontend deps
         run: cd frontend && npm ci
 
       - name: Lint frontend
         run: cd frontend && npm run lint
 
-      # Build Docker images
+      # ─── Build Docker images ────────────────────────
       - name: Build Docker images
         run: |
           docker build -t ci-backend:pr-backend ./backend
@@ -64,14 +64,14 @@ jobs:
         with:
           node-version: 18
 
-      # Backend prod
+      # ─── Build prod backend image ───────────────────
       - name: Build prod backend image
         run: |
           docker build \
             -t ${{ secrets.DOCKERHUB_USER }}/ci-backend:latest \
             ./backend
 
-      # Frontend prod
+      # ─── Build prod frontend image ──────────────────
       - name: Build prod frontend image
         run: |
           docker build \
